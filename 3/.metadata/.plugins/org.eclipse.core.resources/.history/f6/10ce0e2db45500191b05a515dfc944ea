@@ -1,0 +1,5 @@
+package com.yychatclient.controller;
+
+public class ClientReceiverThread {
+
+}
