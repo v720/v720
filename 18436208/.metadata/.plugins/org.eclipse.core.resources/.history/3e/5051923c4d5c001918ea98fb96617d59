@@ -1,0 +1,52 @@
+package com.yychatserver.controller;
+
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.net.Socket;
+import java.util.Set;
+
+import javax.swing.text.html.HTMLDocument.Iterator;
+
+import com.yychat.model.Message;
+
+public class ServerReceiverThread extends Thread{
+	Socket s;
+	public ServerReceiverThread(Socket s){
+		this.s=s;
+	}
+	
+	public void run(){
+		ObjectInputStream ois;
+		ObjectOutputStream oos;
+		Message mess;   
+		while(true){
+		try {
+			ois = new ObjectInputStream(s.getInputStream());
+			mess=(Message)ois.readObject();//接受聊天信息
+			System.out.println(mess.getSender()+"对"+mess.getReceiver()+"说："+mess.getContent());
+			
+			if(mess.getMessageType().equals(Message.message_Common)){
+				Socket s1=(Socket)StartServer.hsmSocket.get(mess.getReceiver());
+				oos=new ObjectOutputStream(s1.getOutputStream());
+				oos.writeObject(mess);//转发聊天信息
+			}
+			//第二步：服务器接收到该请求后发送在线好友信息(类型：message_OnlineFriend)
+			if(mess.getMessageType().equals(Message.message_RequestOnlineFriend)){
+				Set friendSet=StartServer.hsmSocket.keySet();
+				java.util.Iterator it=friendSet.iterator();
+				String friendName;
+				String friendString=" ";
+				while(it.hasNext()){
+					friendName=(String)it.next();
+					friendString=friendString+friendName+" ";
+				}
+				System.out.println("全部好友的名字:"+friendString);
+			}
+			
+		} catch (IOException | ClassNotFoundException e) {
+			e.printStackTrace();
+		}
+		}
+	}
+}
